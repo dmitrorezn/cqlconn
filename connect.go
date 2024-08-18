@@ -1,4 +1,4 @@
-package cqlguery
+package cqlconn
 
 import (
 	"context"
