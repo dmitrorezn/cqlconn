@@ -125,9 +125,6 @@ func (s *Session) HandleConnect(ctx context.Context) {
 		for a := 0; a < reconnectAttempts && err != nil; a++ {
 			err = s.Connect(ctx)
 		}
-		if err != nil {
-			return
-		}
 		ticker.Reset(pingInterval)
 	}
 
@@ -158,7 +155,7 @@ func (s *Session) Ping(ctx context.Context) error {
 
 type QueryOption struct {
 	strict *bool
-	idenpoten *bool
+	idenpotent *bool
 	con *gocql.Consistency
 	rp *gocql.RetryPolicy
 	value []any
@@ -167,16 +164,16 @@ type QueryOption struct {
 
 func (qo *QueryOption) apply(q *gocqlx.Queryx) *gocqlx.Queryx {
 	if qo.strict!=nil && *qo.strict{
-		q=q.Strict()
+		q = q.Strict()
 	}
-	if qo.idenpoten!=nil{
-		q=q.Idempotent(*qo.idenpoten)
+	if qo.idenpotent!=nil{
+		q = q.Idempotent(*qo.idenpotent)
 	}
 	if qo.con!=nil{
-		q=q.Consistency(*qo.con)
+		q = q.Consistency(*qo.con)
 	}
 	if qo.rp!=nil{
-		q=q.RetryPolicy(*qo.rp)
+		q = q.RetryPolicy(*qo.rp)
 	}
 
 	return q
@@ -197,7 +194,7 @@ func Strict() QueryOptionFunc {
 
 func Idenpotent(i bool) QueryOptionFunc {
 	return func(qo *QueryOption) {
-		qo.idenpoten=&i
+		qo.idenpotent=&i
 	}
 }
 
@@ -252,5 +249,5 @@ func (s *Session) Select(ctx context.Context, query string, dest any, optionFunc
 	var opt QueryOption
 	QueryOptions(optionFunc).apply(&opt)
 
-	return s.s.ContextQuery(ctx, query, opt.names).Select(dest)
+	return opt.apply(s.s.ContextQuery(ctx, query, opt.names)).Select(dest)
 }
