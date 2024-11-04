@@ -78,7 +78,17 @@ func DefaultOption() Options {
 
 var defaultOption = DefaultOption()
 
-func Connect(ctx context.Context, options ...Option) (*Session, error) {
+func NewSession(ctx context.Context, options ...Option) (*Session, error) {
+    session,err:= connect(ctx, options...)
+    if err!=nil{
+	return nil, err
+    }
+    go session.HandleConnect(ctx)
+
+    return session, nil
+}
+
+func connect(ctx context.Context, options ...Option) (*Session, error) {
 	cluster := gocql.NewCluster()
 	defaultOption.add(options...).apply(cluster)
 	cluster.CQLVersion = "3.11"
@@ -93,7 +103,6 @@ func Connect(ctx context.Context, options ...Option) (*Session, error) {
 	session := &Session{
 		s: &sess,
 	}
-	go session.HandleConnect(ctx)
 
 	return session, nil
 }
@@ -123,14 +132,14 @@ func (s *Session) HandleConnect(ctx context.Context) {
 			continue
 		}
 		for a := 0; a < reconnectAttempts && err != nil; a++ {
-			err = s.Connect(ctx)
+			err = s.connect(ctx)
 		}
 		ticker.Reset(pingInterval)
 	}
 
 }
-func (s *Session) Connect(ctx context.Context) error {
-	ss, err := Connect(ctx)
+func (s *Session) connect(ctx context.Context) error {
+	ss, err := connect(ctx)
 	if err != nil {
 		return err
 	}
